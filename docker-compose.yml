@@ -1,0 +1,61 @@
+version: '3'
+services:
+  namenode:
+    image: custom-hadoop
+    container_name: namenode
+    hostname: namenode
+    networks:
+      hadoop_network:
+        ipv4_address: 192.168.1.10
+    volumes:
+      - ./hadoop_data/namenode:/home/hadoopuser/hadoop_data:rw
+      - ./config:/opt/hadoop/etc/hadoop:rw
+    command: ["/bin/bash", "-c", "
+      service ssh start;
+      if [ ! -f /home/hadoopuser/hadoop_data/dfs/name/current/VERSION ]; then
+        hdfs namenode -format -force;
+      fi;
+      start-dfs.sh;
+      tail -f /dev/null"]
+
+  datanode1:
+    image: custom-hadoop
+    container_name: datanode1
+    hostname: datanode1
+    user: hadoopuser
+    networks:
+      hadoop_network:
+        ipv4_address: 192.168.1.11
+    volumes:
+      - ./hadoop_data/datanode1:/home/hadoopuser/hadoop_data:rw
+      - ./config:/opt/hadoop/etc/hadoop:rw
+    command: ["/bin/bash", "-c", "
+      service ssh start;
+      if [ ! -d /home/hadoopuser/hadoop_data/hdfs/datanode ]; then
+        mkdir -p /home/hadoopuser/hadoop_data/hdfs/datanode;
+      fi;
+      hdfs datanode;
+      tail -f /dev/null"]
+
+  datanode2:
+    image: custom-hadoop
+    container_name: datanode2
+    hostname: datanode2
+    user: hadoopuser
+    networks:
+      hadoop_network:
+        ipv4_address: 192.168.1.12
+    volumes:
+      - ./hadoop_data/datanode2:/home/hadoopuser/hadoop_data:rw
+      - ./config:/opt/hadoop/etc/hadoop:rw
+    command: ["/bin/bash", "-c", "
+      service ssh start;
+      if [ ! -d /home/hadoopuser/hadoop_data/hdfs/datanode ]; then
+        mkdir -p /home/hadoopuser/hadoop_data/hdfs/datanode;
+      fi;
+      hdfs datanode;
+      tail -f /dev/null"]
+
+networks:
+  hadoop_network:
+    external: true
