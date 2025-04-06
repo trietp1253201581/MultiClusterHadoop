@@ -1,0 +1,34 @@
+FROM ubuntu:22.04
+
+# Cài đặt Java và các gói cần thiết
+RUN apt update && apt install -y \
+    openjdk-8-jdk \
+    wget \
+    curl \
+    python3 \
+    python3-pip \
+    net-tools \
+    iputils-ping \
+    vim
+
+# Tải và giải nén Spark
+# Tải và giải nén Spark
+RUN wget https://downloads.apache.org/spark/spark-3.5.5/spark-3.5.5-bin-hadoop3.tgz && \
+    tar -xvzf spark-3.5.5-bin-hadoop3.tgz -C /opt && \
+    mv /opt/spark-3.5.5-bin-hadoop3 /opt/spark && \
+    rm spark-3.5.5-bin-hadoop3.tgz
+
+# Thiết lập các biến môi trường cho Spark
+ENV SPARK_HOME=/opt/spark
+ENV PATH=$SPARK_HOME/bin:$PATH
+
+# Cài đặt các thư viện Python cho Spark
+RUN pip3 install --no-cache-dir pyspark
+
+# Cài đặt thư viện cần thiết khác nếu có
+
+# Copy các file cấu hình Spark vào container
+COPY ./config/spark /opt/spark/conf
+
+# Khởi động Spark khi container được chạy
+CMD ["/bin/bash", "-c", "spark-class org.apache.spark.deploy.master.Master"]

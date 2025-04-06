@@ -9,7 +9,7 @@ services:
         ipv4_address: 192.168.1.10
     volumes:
       - ./hadoop_data/namenode:/home/hadoopuser/hadoop_data:rw
-      - ./config:/opt/hadoop/etc/hadoop:rw
+      - ./config/hadoop:/opt/hadoop/etc/hadoop:rw
     command: ["/bin/bash", "-c", "
       service ssh start;
       if [ ! -f /home/hadoopuser/hadoop_data/dfs/name/current/VERSION ]; then
@@ -28,7 +28,7 @@ services:
         ipv4_address: 192.168.1.11
     volumes:
       - ./hadoop_data/datanode1:/home/hadoopuser/hadoop_data:rw
-      - ./config:/opt/hadoop/etc/hadoop:rw
+      - ./config/hadoop:/opt/hadoop/etc/hadoop:rw
     command: ["/bin/bash", "-c", "
       service ssh start;
       if [ ! -d /home/hadoopuser/hadoop_data/hdfs/datanode ]; then
@@ -47,7 +47,7 @@ services:
         ipv4_address: 192.168.1.12
     volumes:
       - ./hadoop_data/datanode2:/home/hadoopuser/hadoop_data:rw
-      - ./config:/opt/hadoop/etc/hadoop:rw
+      - ./config/hadoop:/opt/hadoop/etc/hadoop:rw
     command: ["/bin/bash", "-c", "
       service ssh start;
       if [ ! -d /home/hadoopuser/hadoop_data/hdfs/datanode ]; then
@@ -55,6 +55,43 @@ services:
       fi;
       hdfs datanode;
       tail -f /dev/null"]
+
+  spark-master:
+    image: custom-spark
+    container_name: spark-master
+    hostname: spark-master
+    networks:
+      hadoop_network:
+        ipv4_address: 192.168.1.20
+    volumes:
+      - ./config/spark:/opt/spark/conf:rw
+      - ./hadoop_data:/home/hadoopuser/hadoop_data:rw
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+      - HADOOP_HOME=/opt/hadoop
+    command: ["/bin/bash", "-c", "spark-class org.apache.spark.deploy.master.Master"]
+    ports:
+      - "7077:7077"
+      - "8080:8080"  # Web UI của Spark Master
+
+  spark-worker1:
+    image: custom-spark
+    container_name: spark-worker1
+    hostname: spark-worker1
+    networks:
+      hadoop_network:
+        ipv4_address: 192.168.1.21
+    volumes:
+      - ./config/spark:/opt/spark/conf:rw
+      - ./hadoop_data:/home/hadoopuser/hadoop_data:rw
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+      - HADOOP_HOME=/opt/hadoop
+    command: ["/bin/bash", "-c", "spark-class org.apache.spark.deploy.worker.Worker spark://spark-master:7077"]
+    ports:
+      - "8081:8081"  # Web UI của Worker Spark
 
 networks:
   hadoop_network:
